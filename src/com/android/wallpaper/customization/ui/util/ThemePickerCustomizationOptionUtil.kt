@@ -34,6 +34,7 @@ constructor(private val defaultCustomizationOptionUtil: DefaultCustomizationOpti
         SHORTCUTS,
         LOCK_SCREEN_NOTIFICATIONS,
         MORE_LOCK_SCREEN_SETTINGS,
+        DEPTH_STUDIO,
     }
 
     enum class ThemePickerHomeCustomizationOption : CustomizationOption {

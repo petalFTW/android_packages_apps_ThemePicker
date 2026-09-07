@@ -29,6 +29,7 @@ import com.android.customization.picker.quickaffordance.ui.section.KeyguardQuick
 import com.android.customization.picker.quickaffordance.ui.viewmodel.KeyguardQuickAffordancePickerViewModel;
 import com.android.customization.picker.settings.ui.section.ColorContrastSectionController;
 import com.android.customization.picker.settings.ui.section.MoreSettingsSectionController;
+import com.android.customization.picker.settings.ui.section.DepthStudioSectionController;
 import com.android.customization.picker.settings.ui.viewmodel.ColorContrastSectionViewModel;
 import com.android.wallpaper.config.BaseFlags;
 import com.android.wallpaper.model.CustomizationSectionController;
@@ -171,6 +172,7 @@ public final class DefaultCustomizationSections implements CustomizationSections
 
         switch (screen) {
             case LOCK_SCREEN:
+                sectionControllers.add(new DepthStudioSectionController());
                 // Lock screen quick affordances section.
                 sectionControllers.add(
                         new KeyguardQuickAffordanceSectionController(

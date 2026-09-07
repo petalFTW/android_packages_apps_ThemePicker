@@ -23,6 +23,7 @@
     <uses-permission android:name="android.permission.SET_WALLPAPER_DIM_AMOUNT" />
 
     <queries>
+        <package android:name="org.petalos.depth"/>
         <package android:name="android"/>
         <package android:name="com.android.launcher3"/>
         <package android:name="com.android.settings"/>

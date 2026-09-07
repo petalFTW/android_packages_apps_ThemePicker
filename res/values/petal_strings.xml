@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="depth_studio_section_title">Depth Studio</string>
+    <string name="depth_studio_section_description">Customize your depth wallpaper and clock</string>
+</resources>

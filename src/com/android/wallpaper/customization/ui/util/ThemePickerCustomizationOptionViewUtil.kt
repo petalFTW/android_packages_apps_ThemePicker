@@ -16,6 +16,7 @@
 
 package com.android.wallpaper.customization.ui.util
 
+import android.content.Intent
 import android.content.Context
 import android.provider.Settings
 import android.view.LayoutInflater
@@ -95,6 +96,22 @@ constructor(
                                     optionContainer,
                                     false,
                                 )
+                        )
+                    }
+                    val depthStudioIntent = Intent().setClassName(
+                        "org.petalos.depth",
+                        "org.petalos.depth.DepthStudioActivity",
+                    )
+                    if (depthStudioIntent.resolveActivity(context.packageManager) != null) {
+                        add(
+                            ThemePickerCustomizationOptionUtil.ThemePickerLockCustomizationOption.DEPTH_STUDIO to
+                                layoutInflater.inflate(
+                                    R.layout.customization_option_entry_depth_studio,
+                                    optionContainer,
+                                    false,
+                                ).apply {
+                                    setOnClickListener { context.startActivity(depthStudioIntent) }
+                                }
                         )
                     }
                     add(
