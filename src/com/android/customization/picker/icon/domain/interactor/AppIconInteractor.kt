@@ -51,6 +51,10 @@ constructor(
 
     val selectedIconStyle = iconStyleRepository.selectedIconStyle
 
+    val subjectIconStyle = iconStyleRepository.subjectIconStyle
+
+    val subjectIconMonochrome = iconStyleRepository.subjectIconMonochrome
+
     suspend fun applyThemedIconEnabled(enabled: Boolean) =
         iconStyleRepository.setThemedIconEnabled(enabled)
 
@@ -58,4 +62,10 @@ constructor(
 
     suspend fun applyIconStyle(iconStyle: IconStyle): Boolean =
         iconStyleRepository.setIconStyle(iconStyle)
+
+    suspend fun applySubjectIconStyle(style: String) =
+        iconStyleRepository.setSubjectIconStyle(style)
+
+    suspend fun applySubjectIconMonochrome(enabled: Boolean) =
+        iconStyleRepository.setSubjectIconMonochrome(enabled)
 }

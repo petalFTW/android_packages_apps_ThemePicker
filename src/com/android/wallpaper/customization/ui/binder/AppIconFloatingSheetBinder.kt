@@ -16,12 +16,14 @@
 
 package com.android.wallpaper.customization.ui.binder
 
+import android.app.AlertDialog
 import android.content.Context
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver.OnGlobalLayoutListener
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
@@ -47,6 +49,7 @@ import com.android.wallpaper.picker.customization.ui.view.FloatingToolbar
 import com.android.wallpaper.picker.customization.ui.view.adapter.FloatingToolbarTabAdapter
 import com.android.wallpaper.picker.customization.ui.viewmodel.ColorUpdateViewModel
 import com.android.wallpaper.picker.option.ui.adapter.OptionItemAdapter2
+import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.materialswitch.MaterialSwitch
 import java.lang.ref.WeakReference
 import kotlinx.coroutines.CoroutineDispatcher
@@ -139,6 +142,18 @@ object AppIconFloatingSheetBinder {
         val themedIconsSwitch = view.requireViewById<MaterialSwitch>(R.id.themed_icon_toggle)
         val themedIconEntry = view.requireViewById<ViewGroup>(R.id.themed_icon_toggle_entry)
         val themedIconTitle = view.requireViewById<TextView>(R.id.themed_icon_toggle_title)
+        val subjectIconEntry = view.requireViewById<ViewGroup>(R.id.subject_icon_toggle_entry)
+        val subjectIconsSwitch = view.requireViewById<MaterialSwitch>(R.id.subject_icon_toggle)
+        val subjectIconTitle = view.requireViewById<TextView>(R.id.subject_icon_toggle_title)
+        val subjectIconClear = view.requireViewById<TextView>(R.id.subject_icon_clear)
+        val subjectStyleGroup =
+            view.requireViewById<MaterialButtonToggleGroup>(R.id.subject_style_group)
+        val subjectMonochromeEntry =
+            view.requireViewById<ViewGroup>(R.id.subject_monochrome_toggle_entry)
+        val subjectMonochromeSwitch =
+            view.requireViewById<MaterialSwitch>(R.id.subject_monochrome_toggle)
+        val subjectMonochromeTitle =
+            view.requireViewById<TextView>(R.id.subject_monochrome_toggle_title)
 
         data class FloatingSheetHeightsViewModel(
             val styleContentHeight: Int? = null,
@@ -288,7 +303,12 @@ object AppIconFloatingSheetBinder {
                         var switchBinding: SwitchColorBinder.Binding? = null
                         var titleBinding: ColorUpdateBinder.Binding? = null
                         viewModel.previewingIsThemeIconEnabled.collect {
+                            // Rendering state must not be treated as another user toggle.
+                            themedIconsSwitch.setOnCheckedChangeListener(null)
                             themedIconsSwitch.isChecked = it
+                            themedIconsSwitch.setOnCheckedChangeListener { _, checked ->
+                                viewModel.setThemedIconEnabled(checked)
+                            }
                             titleBinding?.destroy()
                             titleBinding =
                                 bindTitleColor(
@@ -310,11 +330,122 @@ object AppIconFloatingSheetBinder {
                     }
 
                     launch {
-                        viewModel.toggleThemedIcon.collect {
-                            themedIconsSwitch.setOnCheckedChangeListener { _, _ ->
-                                launch { it.invoke() }
-                            }
+                        viewModel.isThemedIconAvailable.collect { isAvailable ->
+                            subjectIconEntry.isVisible = isAvailable
+                            subjectIconsSwitch.isEnabled = isAvailable
                         }
+                    }
+
+                    var bindingSubjectStyle = false
+                    // repeatOnLifecycle re-enters this block; old listeners captured old guards.
+                    subjectStyleGroup.clearOnButtonCheckedListeners()
+                    subjectStyleGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
+                        if (isChecked && !bindingSubjectStyle) {
+                            val style =
+                                when (checkedId) {
+                                    R.id.subject_style_sheen -> "sheen"
+                                     R.id.subject_style_refraction -> "refraction"
+                                     R.id.subject_style_solid -> "solid"
+                                    else -> "frosted"
+                                }
+                            viewModel.selectSubjectIconStyle(style)
+                        }
+                    }
+                    launch {
+                        viewModel.subjectIconStyle.collect { style ->
+                            bindingSubjectStyle = true
+                            subjectStyleGroup.check(
+                                when (style) {
+                                    "sheen" -> R.id.subject_style_sheen
+                                     "refraction" -> R.id.subject_style_refraction
+                                     "solid" -> R.id.subject_style_solid
+                                    else -> R.id.subject_style_frosted
+                                }
+                            )
+                            bindingSubjectStyle = false
+                        }
+                    }
+
+                    launch {
+                        var switchBinding: SwitchColorBinder.Binding? = null
+                        var titleBinding: ColorUpdateBinder.Binding? = null
+                        viewModel.previewingSubjectIconEnabled.collect {
+                            subjectIconsSwitch.setOnCheckedChangeListener(null)
+                            subjectIconsSwitch.isChecked = it
+                            subjectIconsSwitch.setOnCheckedChangeListener { _, checked ->
+                                viewModel.setSubjectIconEnabled(checked)
+                            }
+                            subjectIconClear.isVisible = it
+                            subjectStyleGroup.isVisible = it
+                            subjectMonochromeEntry.isVisible = it
+                            titleBinding?.destroy()
+                            titleBinding =
+                                bindTitleColor(
+                                    subjectIconTitle,
+                                    colorUpdateViewModel,
+                                    isFloatingSheetActive,
+                                    lifecycleOwner,
+                                )
+                            switchBinding?.destroy()
+                            switchBinding =
+                                SwitchColorBinder.bind(
+                                    switch = subjectIconsSwitch,
+                                    isChecked = it,
+                                    colorUpdateViewModel = colorUpdateViewModel,
+                                    shouldAnimateColor = isFloatingSheetActive,
+                                    lifecycleOwner = lifecycleOwner,
+                                )
+                        }
+                    }
+
+                    var bindingSubjectMonochrome = false
+                    subjectMonochromeSwitch.setOnCheckedChangeListener { _, checked ->
+                        if (!bindingSubjectMonochrome) {
+                            viewModel.setSubjectIconMonochrome(checked)
+                        }
+                    }
+                    launch {
+                        var switchBinding: SwitchColorBinder.Binding? = null
+                        var titleBinding: ColorUpdateBinder.Binding? = null
+                        viewModel.previewingSubjectMonochrome.collect {
+                            bindingSubjectMonochrome = true
+                            subjectMonochromeSwitch.isChecked = it
+                            bindingSubjectMonochrome = false
+                            titleBinding?.destroy()
+                            titleBinding =
+                                bindTitleColor(
+                                    subjectMonochromeTitle,
+                                    colorUpdateViewModel,
+                                    isFloatingSheetActive,
+                                    lifecycleOwner,
+                                )
+                            switchBinding?.destroy()
+                            switchBinding =
+                                SwitchColorBinder.bind(
+                                    switch = subjectMonochromeSwitch,
+                                    isChecked = it,
+                                    colorUpdateViewModel = colorUpdateViewModel,
+                                    shouldAnimateColor = isFloatingSheetActive,
+                                    lifecycleOwner = lifecycleOwner,
+                                )
+                        }
+                    }
+
+                    subjectIconClear.setOnClickListener {
+                        AlertDialog.Builder(view.context)
+                            .setMessage(R.string.subject_icons_clear_confirm)
+                            .setNegativeButton(android.R.string.cancel, null)
+                            .setPositiveButton(R.string.subject_icons_clear) { _, _ ->
+                                lifecycleOwner.lifecycleScope.launch {
+                                    if (SubjectIconProvider.clear(view.context)) {
+                                        viewModel.resetPreview()
+                                    } else {
+                                        Toast.makeText(view.context, R.string.subject_icons_failed,
+                                            Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                            }
+                            .show()
                     }
                 }
             }

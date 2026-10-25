@@ -35,6 +35,14 @@ interface IconStyleRepository {
 
     val selectedIconStyle: Flow<IconStyle>
 
+    val subjectIconStyle: Flow<String>
+
+    val subjectIconMonochrome: Flow<Boolean>
+
+    suspend fun setSubjectIconStyle(style: String)
+
+    suspend fun setSubjectIconMonochrome(enabled: Boolean)
+
     /**
      * Sets the selected icon style.
      *

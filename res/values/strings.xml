@@ -158,6 +158,7 @@
     <!-- Label for an icon style option that applies a monochrome theme to app icons when selected.
         [CHAR LIMIT=15] -->
     <string name="app_icons_style_minimal">Minimal</string>
+    <string name="app_icons_style_subject">Cutout Icons</string>
 
     <!-- Title of a tab to change the app icon shape [CHAR LIMIT=15] -->
     <string name="app_icons_shape">Shape</string>

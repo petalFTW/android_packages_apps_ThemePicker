@@ -130,6 +130,139 @@
                     app:layout_constraintEnd_toEndOf="parent"
                     android:theme="@style/Theme.Material3.DynamicColors.DayNight" />
             </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/subject_icon_toggle_entry"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingVertical="@dimen/floating_sheet_content_vertical_padding"
+                android:clipToPadding="false"
+                android:clipChildren="false"
+                android:visibility="gone">
+
+                <TextView
+                    style="@style/CustomizationOptionEntryTitleTextStyle"
+                    android:id="@+id/subject_icon_toggle_title"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/app_icons_style_subject"
+                    android:layout_marginStart="@dimen/floating_sheet_content_horizontal_padding"
+                    android:layout_marginEnd="@dimen/floating_sheet_clock_style_clock_size_text_margin_end"
+                    android:importantForAccessibility="no"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toStartOf="@+id/subject_icon_toggle"
+                    app:layout_constraintTop_toBottomOf="parent"
+                    app:layout_constraintBottom_toTopOf="@+id/subject_icon_toggle" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    style="@style/SettingslibSwitchStyle.Expressive"
+                    android:id="@+id/subject_icon_toggle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="@dimen/floating_sheet_content_horizontal_padding"
+                    android:contentDescription="@string/app_icons_style_subject"
+                    android:clickable="true"
+                    app:layout_constraintTop_toTopOf="@+id/subject_icon_toggle_title"
+                    app:layout_constraintBottom_toBottomOf="@+id/subject_icon_toggle_title"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    android:theme="@style/Theme.Material3.DynamicColors.DayNight" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fillViewport="true"
+                android:scrollbars="none">
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/subject_style_group"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="@dimen/floating_sheet_content_horizontal_padding"
+                android:visibility="gone"
+                android:theme="@style/Theme.Material3.DynamicColors.DayNight"
+                app:selectionRequired="true"
+                app:singleSelection="true">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/subject_style_frosted"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/subject_style_frosted" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/subject_style_sheen"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/subject_style_sheen" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/subject_style_refraction"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/subject_style_refraction" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/subject_style_solid"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/subject_style_solid" />
+            </com.google.android.material.button.MaterialButtonToggleGroup>
+            </HorizontalScrollView>
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/subject_monochrome_toggle_entry"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingVertical="@dimen/floating_sheet_content_vertical_padding"
+                android:clipToPadding="false"
+                android:clipChildren="false"
+                android:visibility="gone">
+
+                <TextView
+                    style="@style/CustomizationOptionEntryTitleTextStyle"
+                    android:id="@+id/subject_monochrome_toggle_title"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/subject_icons_monochrome"
+                    android:layout_marginStart="@dimen/floating_sheet_content_horizontal_padding"
+                    android:layout_marginEnd="@dimen/floating_sheet_clock_style_clock_size_text_margin_end"
+                    android:importantForAccessibility="no"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toStartOf="@+id/subject_monochrome_toggle"
+                    app:layout_constraintTop_toBottomOf="parent"
+                    app:layout_constraintBottom_toTopOf="@+id/subject_monochrome_toggle" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    style="@style/SettingslibSwitchStyle.Expressive"
+                    android:id="@+id/subject_monochrome_toggle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="@dimen/floating_sheet_content_horizontal_padding"
+                    android:contentDescription="@string/subject_icons_monochrome"
+                    android:clickable="true"
+                    app:layout_constraintTop_toTopOf="@+id/subject_monochrome_toggle_title"
+                    app:layout_constraintBottom_toBottomOf="@+id/subject_monochrome_toggle_title"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    android:theme="@style/Theme.Material3.DynamicColors.DayNight" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <TextView
+                android:id="@+id/subject_icon_clear"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="@dimen/floating_sheet_content_horizontal_padding"
+                android:paddingEnd="@dimen/floating_sheet_content_horizontal_padding"
+                android:paddingTop="@dimen/floating_sheet_content_vertical_padding"
+                android:paddingBottom="@dimen/floating_sheet_content_vertical_padding"
+                android:text="@string/subject_icons_clear"
+                android:textColor="?android:attr/textColorPrimary"
+                android:background="?android:attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:visibility="gone" />
         </LinearLayout>
     </FrameLayout>
 

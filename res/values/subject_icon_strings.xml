@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subject_icons_title">Cutout Icons</string>
+    <string name="subject_icons_summary">Keep each app’s coloured logo and remove its background. Images are processed and stored on this device.</string>
+    <string name="subject_icons_clear">Clear stored icons</string>
+    <string name="subject_icons_clear_confirm">Turn off Cutout Icons and delete all generated images?</string>
+    <string name="subject_icons_refresh">Refresh icons</string>
+    <string name="subject_icons_progress">Processing %1$d of %2$d icons</string>
+    <string name="subject_icons_ready">%1$d icons processed. %2$d kept their original appearance.</string>
+    <string name="subject_icons_interrupted">Processing was interrupted. Turn on to try again.</string>
+    <string name="subject_icons_background">Continue in background</string>
+    <string name="subject_icons_failed">Could not update Cutout Icons. Please try again.</string>
+    <string name="subject_icons_processing">Preparing Cutout Icons</string>
+    <string name="subject_icons_monochrome">White/black cutouts</string>
+    <string name="subject_style_frosted">Frosted</string>
+    <string name="subject_style_sheen">Sheen</string>
+    <string name="subject_style_refraction">Refraction</string>
+    <string name="subject_style_solid">Solid colour</string>
+</resources>

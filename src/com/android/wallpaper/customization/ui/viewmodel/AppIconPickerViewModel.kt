@@ -19,6 +19,8 @@ package com.android.wallpaper.customization.ui.viewmodel
 import android.content.Context
 import android.stats.style.StyleEnums.APP_ICON_STYLE_UNSPECIFIED
 import android.util.Log
+import android.widget.Toast
+import com.android.customization.picker.icon.shared.model.ThemePickerIconStyle
 import com.android.customization.model.grid.ShapeOptionModel
 import com.android.customization.module.logging.ThemesUserEventLogger
 import com.android.customization.picker.grid.ui.viewmodel.ShapeIconViewModel
@@ -39,27 +41,22 @@ import java.util.Locale
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeout
 
 class AppIconPickerViewModel
 @AssistedInject
 constructor(
     @ApplicationContext private val applicationContext: Context,
-    interactor: AppIconInteractor,
+    private val interactor: AppIconInteractor,
     private val logger: ThemesUserEventLogger,
     @Assisted private val viewModelScope: CoroutineScope,
 ) {
@@ -99,34 +96,54 @@ constructor(
             replay = 1,
         )
 
-    private val overridingIsThemedIconEnabled = MutableStateFlow<Boolean?>(null)
     val isThemedIconEnabled =
         interactor.isThemedIconEnabled.shareIn(
             scope = viewModelScope,
             started = SharingStarted.Lazily,
             replay = 1,
         )
-    val previewingIsThemeIconEnabled =
-        combine(overridingIsThemedIconEnabled, isThemedIconEnabled) {
-            overridingIsThemeIconEnabled,
-            isThemeIconEnabled ->
-            overridingIsThemeIconEnabled ?: isThemeIconEnabled
-        }
-    val toggleThemedIcon: Flow<suspend () -> Unit> =
-        previewingIsThemeIconEnabled.map {
-            {
-                val newValue = !it
-                overridingIsThemedIconEnabled.value = newValue
-            }
-        }
 
     //// Style
     val selectedIconStyle = interactor.selectedIconStyle
+    private val isSubjectIconEnabled =
+        selectedIconStyle
+            .map { it == ThemePickerIconStyle.SUBJECT }
+            .shareIn(scope = viewModelScope, started = SharingStarted.Lazily, replay = 1)
+    val subjectIconStyle =
+        interactor.subjectIconStyle
+            .shareIn(scope = viewModelScope, started = SharingStarted.Lazily, replay = 1)
+    val subjectIconMonochrome =
+        interactor.subjectIconMonochrome
+            .shareIn(scope = viewModelScope, started = SharingStarted.Lazily, replay = 1)
+    private val overridingSubjectMonochrome = MutableStateFlow<Boolean?>(null)
+    val previewingSubjectMonochrome =
+        combine(overridingSubjectMonochrome, subjectIconMonochrome) { overriding, current ->
+            overriding ?: current
+        }
     private val overridingIconStyle: MutableStateFlow<IconStyle?> = MutableStateFlow(null)
     val previewingIconStyle =
         combine(selectedIconStyle, overridingIconStyle) { selected, overriding ->
             overriding ?: selected
         }
+    // Both switches are projections of ONE pending mode, not independently writable booleans.
+    val previewingIsThemeIconEnabled =
+        previewingIconStyle.map { it == ThemePickerIconStyle.MONOCHROME }
+    val previewingSubjectIconEnabled =
+        previewingIconStyle.map { it == ThemePickerIconStyle.SUBJECT }
+
+    fun setThemedIconEnabled(enabled: Boolean) {
+        overridingIconStyle.value =
+            if (enabled) ThemePickerIconStyle.MONOCHROME else ThemePickerIconStyle.DEFAULT
+    }
+
+    fun setSubjectIconEnabled(enabled: Boolean) {
+        overridingIconStyle.value =
+            if (enabled) ThemePickerIconStyle.SUBJECT else ThemePickerIconStyle.DEFAULT
+    }
+
+    // Kept for existing callers; switch binders use the explicit checked-value setters above.
+    val toggleThemedIcon: Flow<suspend () -> Unit> =
+        previewingIsThemeIconEnabled.map { checked -> { setThemedIconEnabled(!checked) } }
     private val iconStylesModels =
         interactor.iconStyleModels.shareIn(
             scope = viewModelScope,
@@ -218,17 +235,20 @@ constructor(
         }
 
     val shapeAndThemedIconSummary: Flow<AppIconPickerSummaryViewModel> =
-        combine(selectedShape, isThemedIconEnabled, isShapeOptionsAvailable) {
+        combine(
             selectedShape,
             isThemedIconEnabled,
-            isShapeOptionsAvailable ->
+            isSubjectIconEnabled,
+            isShapeOptionsAvailable,
+        ) { selectedShape, isThemedIconEnabled, isSubjectIconEnabled, isShapeOptionsAvailable ->
             val selectedShapeString =
                 if (isShapeOptionsAvailable) selectedShape.text.asString(applicationContext) else ""
             val appIconThemeString =
-                if (isThemedIconEnabled) {
-                    applicationContext.getString(R.string.app_icons_theme_themed)
-                } else {
-                    applicationContext.getString(R.string.app_icons_theme_default)
+                when {
+                    isSubjectIconEnabled -> applicationContext.getString(R.string.app_icons_style_subject)
+                    isThemedIconEnabled ->
+                        applicationContext.getString(R.string.app_icons_theme_themed)
+                    else -> applicationContext.getString(R.string.app_icons_theme_default)
                 }
             AppIconPickerSummaryViewModel(
                 description =
@@ -296,48 +316,11 @@ constructor(
             )
         }
 
-    val shapeAndThemedIconOnApply: Flow<(suspend () -> Unit)?> =
-        combine(
-            overridingShapeKey,
-            selectedShape,
-            overridingIsThemedIconEnabled,
-            isThemedIconEnabled,
-        ) {
-            overridingShapeKey,
-            selectedShape,
-            overridingIsThemedIconEnabled,
-            currentIsThemedIconEnabled ->
-            val shapeNeedsUpdate =
-                overridingShapeKey != null && overridingShapeKey != selectedShape.key.value
-            val themedIconNeedsUpdate =
-                overridingIsThemedIconEnabled != null &&
-                    overridingIsThemedIconEnabled != currentIsThemedIconEnabled
-            if (shapeNeedsUpdate || themedIconNeedsUpdate) {
-                {
-                    if (shapeNeedsUpdate) {
-                        overridingShapeKey?.let {
-                            interactor.applyShape(it)
-                            logger.logShapeApplied(it)
-                        }
-                    }
-                    if (themedIconNeedsUpdate) {
-                        coroutineScope {
-                            launch {
-                                overridingIsThemedIconEnabled?.let {
-                                    interactor.applyThemedIconEnabled(it)
-                                }
-                            }
-                            isThemedIconEnabled.drop(1).take(1).collect {
-                                return@collect
-                            }
-                            overridingIsThemedIconEnabled?.let { logger.logThemedIconApplied(it) }
-                        }
-                    }
-                }
-            } else {
-                null
-            }
-        }
+    // The switch UI and the style-list UI use the same apply transaction.
+    val shapeAndThemedIconOnApply: Flow<(suspend () -> Unit)?>
+        get() = iconStyleAndShapeOnApply
+    val shapeAndIconThemeOnApply: Flow<(suspend () -> Unit)?>
+        get() = iconStyleAndShapeOnApply
 
     val iconStyleAndShapeOnApply: Flow<(suspend () -> Unit)?> =
         combine(overridingShapeKey, selectedShape, overridingIconStyle, selectedIconStyle) {
@@ -357,36 +340,28 @@ constructor(
                             logger.logShapeApplied(it)
                         }
                     }
-                    if (styleNeedsUpdate) {
-                        coroutineScope {
-                            val waitForUpdate = launch {
-                                try {
-                                    withTimeout(ICON_UPDATE_TIMEOUT) {
-                                        // Drop the first emitted icon style since it is the current
-                                        // selection. The next emitted icon style signals an update.
-                                        selectedIconStyle.drop(1).take(1).collect {
-                                            return@collect
-                                        }
-                                    }
-                                } catch (e: TimeoutCancellationException) {
-                                    Log.w(TAG, "Timed out waiting for icon update", e)
-                                }
-                            }
-                            launch {
-                                val success =
-                                    overridingIconStyle?.let { interactor.applyIconStyle(it) }
-                                if (success == true) {
-                                    logger.logIconStyleApplied(
-                                        overridingIconStyle.loggingId ?: APP_ICON_STYLE_UNSPECIFIED
-                                    )
-                                } else {
-                                    Log.w(TAG, "Apply unsuccessful, no data was updated")
-                                    waitForUpdate.cancel()
-                                }
-                            }
-                            try {
-                                waitForUpdate.join()
-                            } catch (_: CancellationException) {}
+                    if (styleNeedsUpdate && overridingIconStyle != null) {
+                        if (overridingIconStyle == ThemePickerIconStyle.SUBJECT) {
+                            Toast.makeText(applicationContext, R.string.subject_icons_processing,
+                                Toast.LENGTH_SHORT).show()
+                        }
+                        // This suspend call owns completion, including the cutout batch.
+                        // Do not launch a second transaction or wait for an arbitrary next emission.
+                        val success = try {
+                            interactor.applyIconStyle(overridingIconStyle)
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (error: Exception) {
+                            Log.e(TAG, "Could not apply icon mode", error)
+                            false
+                        }
+                        if (success) {
+                            logger.logIconStyleApplied(
+                                overridingIconStyle.loggingId ?: APP_ICON_STYLE_UNSPECIFIED)
+                        } else {
+                            Log.w(TAG, "Apply unsuccessful, no data was updated")
+                            Toast.makeText(applicationContext, R.string.subject_icons_failed,
+                                Toast.LENGTH_LONG).show()
                         }
                     }
                 }
@@ -395,14 +370,25 @@ constructor(
             }
         }
 
+    fun selectSubjectIconStyle(style: String) {
+        viewModelScope.launch { interactor.applySubjectIconStyle(style) }
+    }
+
+    fun setSubjectIconMonochrome(enabled: Boolean) {
+        overridingSubjectMonochrome.value = enabled
+        viewModelScope.launch { interactor.applySubjectIconMonochrome(enabled) }
+    }
+
     fun resetPreview() {
         overridingShapeKey.value = null
-        overridingIsThemedIconEnabled.value = null
+        overridingIconStyle.value = null
+        overridingSubjectMonochrome.value = null
     }
 
     fun resetPreview2() {
         overridingShapeKey.value = null
         overridingIconStyle.value = null
+        overridingSubjectMonochrome.value = null
     }
 
     private fun toShapeOptionItemViewModel(

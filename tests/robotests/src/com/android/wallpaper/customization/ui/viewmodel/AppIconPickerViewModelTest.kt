@@ -40,7 +40,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -80,6 +79,49 @@ class AppIconPickerViewModelTest {
     fun tearDown() {
         Dispatchers.resetMain()
     }
+
+    @Test
+    fun enablingThemedWhileCutoutIsActive_appliesOneExclusiveMode() =
+        testScope.runTest {
+            iconStyleRepository.setIconStyle(ThemePickerIconStyle.SUBJECT)
+            iconStyleRepository.appliedIconStyles.clear()
+            val themed = collectLastValue(underTest.previewingIsThemeIconEnabled)
+            val cutout = collectLastValue(underTest.previewingSubjectIconEnabled)
+            val apply = collectLastValue(underTest.shapeAndIconThemeOnApply)
+            assertThat(cutout()).isTrue()
+            assertThat(themed()).isFalse()
+
+            underTest.setThemedIconEnabled(true)
+            assertThat(themed()).isTrue()
+            assertThat(cutout()).isFalse()
+            checkNotNull(apply()).invoke()
+
+            assertThat(iconStyleRepository.appliedIconStyles)
+                .containsExactly(ThemePickerIconStyle.MONOCHROME)
+            assertThat(iconStyleRepository.selectedIconStyle.value)
+                .isEqualTo(ThemePickerIconStyle.MONOCHROME)
+            assertThat(apply()).isNull()
+        }
+
+    @Test
+    fun repeatedCutoutThemedSelections_onlyApplyTheFinalMode() =
+        testScope.runTest {
+            val themed = collectLastValue(underTest.previewingIsThemeIconEnabled)
+            val cutout = collectLastValue(underTest.previewingSubjectIconEnabled)
+            val apply = collectLastValue(underTest.shapeAndIconThemeOnApply)
+            repeat(10) {
+                underTest.setThemedIconEnabled(true)
+                assertThat(themed()).isTrue()
+                assertThat(cutout()).isFalse()
+                underTest.setSubjectIconEnabled(true)
+                assertThat(cutout()).isTrue()
+                assertThat(themed()).isFalse()
+            }
+            assertThat(iconStyleRepository.appliedIconStyles).isEmpty()
+            checkNotNull(apply()).invoke()
+            assertThat(iconStyleRepository.appliedIconStyles)
+                .containsExactly(ThemePickerIconStyle.SUBJECT)
+        }
 
     @Test
     fun selectedShape() =
@@ -275,7 +317,7 @@ class AppIconPickerViewModelTest {
         }
 
     @Test
-    fun iconStyleAndShapeOnApply_completesOnTimeOut() =
+    fun iconStyleAndShapeOnApply_doesNotHangWhenRepositoryDoesNotConfirm() =
         testScope.runTest {
             val styleOptions = collectLastValue(underTest.styleOptions)
             val onMinimalOptionClick =
@@ -288,11 +330,10 @@ class AppIconPickerViewModelTest {
 
             onMinimalOptionClick()?.invoke()
             val job = testScope.launch { onApply()?.invoke() }
-
-            assertThat(job.isActive).isTrue()
-            advanceTimeBy(AppIconPickerViewModel.ICON_UPDATE_TIMEOUT)
             runCurrent()
 
+            // The apply call owns completion; it must not block waiting for a confirmation
+            // emission that the repository never produces.
             assertThat(job.isActive).isFalse()
         }
 

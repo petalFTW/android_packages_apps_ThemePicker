@@ -235,7 +235,7 @@ constructor(
                         if (BaseFlags.get().isExtendibleThemeManager()) {
                             appIconPickerViewModel.iconStyleAndShapeOnApply
                         } else {
-                            appIconPickerViewModel.shapeAndThemedIconOnApply
+                            appIconPickerViewModel.shapeAndIconThemeOnApply
                         }
                     COLORS ->
                         combine(colorPickerViewModel2.onApply, darkModeViewModel.onApply) {
@@ -260,11 +260,14 @@ constructor(
                         if (onApplyJob?.isActive != true) {
                             onApplyJob =
                                 viewModelScope.launch {
-                                    isApplyInProgress.value = true
-                                    onApply()
-                                    onComplete()
-                                    isApplyInProgress.value = false
-                                    onApplyJob = null
+                                     isApplyInProgress.value = true
+                                     try {
+                                         onApply()
+                                         onComplete()
+                                     } finally {
+                                         isApplyInProgress.value = false
+                                         onApplyJob = null
+                                     }
                                 }
                         }
                     }

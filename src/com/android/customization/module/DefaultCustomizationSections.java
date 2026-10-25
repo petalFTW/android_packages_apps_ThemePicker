@@ -206,6 +206,8 @@ public final class DefaultCustomizationSections implements CustomizationSections
                                 mThemedIconSnapshotRestorer,
                                 mThemesUserEventLogger));
 
+                sectionControllers.add(new com.android.customization.picker.settings.ui.section.SubjectIconsSectionController());
+
                 // Color contrast section
                     sectionControllers.add(
                             new ColorContrastSectionController(new ViewModelProvider(activity,
