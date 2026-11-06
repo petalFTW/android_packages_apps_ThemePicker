@@ -146,6 +146,7 @@ object AppIconFloatingSheetBinder {
         val subjectIconsSwitch = view.requireViewById<MaterialSwitch>(R.id.subject_icon_toggle)
         val subjectIconTitle = view.requireViewById<TextView>(R.id.subject_icon_toggle_title)
         val subjectIconClear = view.requireViewById<TextView>(R.id.subject_icon_clear)
+        val subjectIconRefresh = view.requireViewById<TextView>(R.id.subject_icon_refresh)
         val subjectStyleGroup =
             view.requireViewById<MaterialButtonToggleGroup>(R.id.subject_style_group)
         val subjectMonochromeEntry =
@@ -344,8 +345,10 @@ object AppIconFloatingSheetBinder {
                             val style =
                                 when (checkedId) {
                                     R.id.subject_style_sheen -> "sheen"
-                                     R.id.subject_style_refraction -> "refraction"
-                                     R.id.subject_style_solid -> "solid"
+                                    R.id.subject_style_refraction -> "refraction"
+                                    R.id.subject_style_solid -> "solid"
+                                    R.id.subject_style_wallpaper -> "wallpaper"
+                                    R.id.subject_style_see_through -> "seethrough"
                                     else -> "frosted"
                                 }
                             viewModel.selectSubjectIconStyle(style)
@@ -357,8 +360,10 @@ object AppIconFloatingSheetBinder {
                             subjectStyleGroup.check(
                                 when (style) {
                                     "sheen" -> R.id.subject_style_sheen
-                                     "refraction" -> R.id.subject_style_refraction
-                                     "solid" -> R.id.subject_style_solid
+                                    "refraction" -> R.id.subject_style_refraction
+                                    "solid" -> R.id.subject_style_solid
+                                    "wallpaper" -> R.id.subject_style_wallpaper
+                                    "seethrough" -> R.id.subject_style_see_through
                                     else -> R.id.subject_style_frosted
                                 }
                             )
@@ -376,6 +381,7 @@ object AppIconFloatingSheetBinder {
                                 viewModel.setSubjectIconEnabled(checked)
                             }
                             subjectIconClear.isVisible = it
+                            subjectIconRefresh.isVisible = it
                             subjectStyleGroup.isVisible = it
                             subjectMonochromeEntry.isVisible = it
                             titleBinding?.destroy()
@@ -428,6 +434,17 @@ object AppIconFloatingSheetBinder {
                                     shouldAnimateColor = isFloatingSheetActive,
                                     lifecycleOwner = lifecycleOwner,
                                 )
+                        }
+                    }
+
+                    subjectIconRefresh.setOnClickListener {
+                        lifecycleOwner.lifecycleScope.launch {
+                            val ok = SubjectIconProvider.refresh(view.context)
+                            Toast.makeText(
+                                view.context,
+                                if (ok) R.string.subject_icons_processing else R.string.subject_icons_failed,
+                                Toast.LENGTH_SHORT,
+                            ).show()
                         }
                     }
 

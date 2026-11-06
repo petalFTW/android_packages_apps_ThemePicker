@@ -16,4 +16,6 @@
     <string name="subject_style_sheen">Sheen</string>
     <string name="subject_style_refraction">Refraction</string>
     <string name="subject_style_solid">Solid colour</string>
+    <string name="subject_style_wallpaper">Wallpaper harmony</string>
+    <string name="subject_style_see_through">See-through</string>
 </resources>

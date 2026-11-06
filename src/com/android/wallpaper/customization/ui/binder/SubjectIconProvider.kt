@@ -12,7 +12,12 @@ import kotlinx.coroutines.withContext
 
 /** Sends the one-shot clear command to the Launcher subject-icon provider. */
 object SubjectIconProvider {
-    suspend fun clear(context: Context): Boolean = withContext(Dispatchers.IO) {
+    suspend fun clear(context: Context): Boolean = send(context, "clear")
+
+    // incremental, only new apps get processed
+    suspend fun refresh(context: Context): Boolean = send(context, "generate")
+
+    private suspend fun send(context: Context, action: String): Boolean = withContext(Dispatchers.IO) {
         try {
             val utils =
                 PreviewUtils(
@@ -23,7 +28,7 @@ object SubjectIconProvider {
             if (utils.supportsPreview()) {
                 context.contentResolver.update(
                     utils.getUri("subject_icons"),
-                    ContentValues().apply { put("action", "clear") },
+                    ContentValues().apply { put("action", action) },
                     null,
                     null,
                 ) == 1
